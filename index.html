@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d070c" />
+  <title>Minuit — crée ton copain IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <button class="icon-btn skip" id="skipBtn" aria-label="Passer l'intro">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 5l9 7-9 7z M17 5h2v14h-2z" fill="currentColor"/></svg>
+    </button>
+
+    <header class="top">
+      <div class="brand">
+        <div class="logo"><span>mi</span><span>nuit</span></div>
+        <h1>crée ton <em>copain IA</em></h1>
+      </div>
+      <div class="progress" id="progress"></div>
+      <div class="who">
+        <div class="avatar avatar-lg" id="headerAvatar"></div>
+        <span class="who-name" id="headerName">lui</span>
+        <svg class="heart" viewBox="0 0 24 24" width="22" height="22"><path d="M12 21s-7.5-4.6-9.6-9.1C.9 8.6 3 5 6.5 5c2 0 3.4 1.1 4.2 2.4h2.6C14.1 6.1 15.5 5 17.5 5 21 5 23.1 8.6 21.6 11.9 19.5 16.4 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      </div>
+    </header>
+
+    <main class="chat" id="chat" aria-live="polite"></main>
+
+    <form class="composer" id="composer" autocomplete="off">
+      <input id="input" type="text" placeholder="écris-lui…" maxlength="300" />
+      <button type="submit" class="send" aria-label="Envoyer">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </form>
+
+    <button class="icon-btn info" id="infoBtn" aria-label="Infos">i</button>
+    <div class="toast" id="toast" hidden>Personnage fictif généré par IA. Rien de ce qu'il dit n'est réel.</div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
