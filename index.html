@@ -9,8 +9,39 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Minuit" />
+  <meta name="description" content="Crée ton copain IA et parle-lui quand tu veux." />
 </head>
 <body>
+  <section class="welcome" id="welcome" aria-labelledby="welcomeTitle">
+    <div class="welcome-glow"></div>
+    <div class="welcome-inner">
+      <div class="logo logo-xl"><span>mi</span><span>nuit</span></div>
+      <h2 id="welcomeTitle">le copain qui répond<br><em>à 2h du mat.</em></h2>
+      <ul class="perks">
+        <li><span>01</span> tu choisis son visage et son caractère</li>
+        <li><span>02</span> il retient ce que tu lui racontes</li>
+        <li><span>03</span> il est là, même quand personne ne l'est</li>
+      </ul>
+      <label class="age">
+        <input type="checkbox" id="ageOk" />
+        <span>j'ai 18 ans ou plus et je comprends qu'il s'agit d'un personnage fictif créé par une IA.</span>
+      </label>
+      <button class="cta" id="startBtn" disabled>créer le mien</button>
+      <button class="ghost-btn" id="installBtn" hidden>
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        installer l'appli
+      </button>
+      <p class="ios-hint" id="iosHint" hidden>Sur iPhone : touche <b>Partager</b> <span aria-hidden="true">⬆︎</span> puis <b>Sur l'écran d'accueil</b>.</p>
+    </div>
+  </section>
+
   <div class="app">
     <button class="icon-btn skip" id="skipBtn" aria-label="Passer l'intro">
       <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 5l9 7-9 7z M17 5h2v14h-2z" fill="currentColor"/></svg>

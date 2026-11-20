@@ -1,0 +1,28 @@
+{
+  "name": "minuit",
+  "version": "1.0.0",
+  "description": "Application web mobile (HTML/CSS/JS, sans build) : un onboarding sous forme de conversation où l'utilisatrice « construit » son copain IA, puis un chat avec lui.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tiftif123a/Tiftif123a.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tiftif123a/Tiftif123a/issues"
+  },
+  "homepage": "https://github.com/Tiftif123a/Tiftif123a#readme",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.11.0"
+  }
+}

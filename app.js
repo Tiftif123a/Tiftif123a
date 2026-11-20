@@ -63,6 +63,8 @@ const state = {
   phase: "onboarding",
   waitingFor: null, // 'name' | 'userName' | null
   replyIdx: 0,
+  history: [], // { role: 'user' | 'assistant', content }
+  busy: false,
 };
 
 const TOTAL_STEPS = 6;
@@ -118,19 +120,36 @@ function makeRow(who) {
   return row;
 }
 
-async function him(text, { delay } = {}) {
+async function him(textOrPromise, { delay, instant } = {}) {
   const row = makeRow("him");
-  const typing = document.createElement("div");
-  typing.className = "bubble typing";
-  typing.innerHTML = "<i></i><i></i><i></i>";
-  row.appendChild(typing);
+  const bubble = document.createElement("div");
+  row.appendChild(bubble);
   chat.appendChild(row);
+  let text = textOrPromise;
+  if (!instant) {
+    bubble.className = "bubble typing";
+    bubble.innerHTML = "<i></i><i></i><i></i>";
+    scrollDown();
+    if (typeof textOrPromise === "string") {
+      await sleep(delay ?? Math.min(1600, 450 + text.length * 22));
+    } else {
+      const started = Date.now();
+      text = await textOrPromise;
+      await sleep(Math.max(0, 700 - (Date.now() - started))); // petit délai naturel
+    }
+  }
+  bubble.className = "bubble";
+  bubble.textContent = text;
   scrollDown();
-  await sleep(delay ?? Math.min(1600, 450 + text.length * 22));
-  typing.className = "bubble";
-  typing.textContent = text;
-  scrollDown();
-  await sleep(250);
+  if (state.phase === "chat") remember("assistant", text);
+  if (!instant) await sleep(250);
+  return text;
+}
+
+function remember(role, content) {
+  state.history.push({ role, content });
+  state.history = state.history.slice(-60);
+  save();
 }
 
 function me(text) {
@@ -274,14 +293,54 @@ async function startChat(fresh) {
   setProgress(TOTAL_STEPS);
   refreshHeader();
   input.placeholder = `écris à ${state.name.toLowerCase()}…`;
-  if (!fresh) {
+  if (fresh) {
+    remember("assistant", "voilà. maintenant je suis à toi.");
+  } else {
     chat.innerHTML = "";
+    const past = state.history;
+    state.history = [];
+    for (const m of past) {
+      if (m.role === "user") { me(m.content); remember("user", m.content); }
+      else await him(m.content, { instant: true });
+    }
     await him(VIBES[state.vibe].greet(state.userName, state.nickname));
   }
   input.focus();
 }
 
-async function reply(userText) {
+// Vraie IA via le serveur (/api/chat). Si le serveur n'est pas là
+// (fichier ouvert directement, hébergement statique…), on retombe sur les phrases prédéfinies.
+async function askAI() {
+  if (location.protocol === "file:") return scriptedReply();
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 45000);
+    const res = await fetch("api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        profile: {
+          name: state.name, tag: state.persona.tag, vibe: state.vibe,
+          userName: state.userName, nickname: state.nickname, meet: state.meet,
+        },
+        messages: state.history,
+      }),
+    });
+    clearTimeout(timer);
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.reply) return data.reply;
+    if (res.status === 429 && data.error) return data.error;
+  } catch {}
+  return scriptedReply();
+}
+
+function scriptedReply() {
+  const last = [...state.history].reverse().find((m) => m.role === "user");
+  return reply(last ? last.content : "");
+}
+
+function reply(userText) {
   const t = userText.toLowerCase();
   const n = state.nickname;
   let text;
@@ -293,7 +352,7 @@ async function reply(userText) {
     const pool = VIBES[state.vibe].replies;
     text = pool[state.replyIdx++ % pool.length](n);
   }
-  await him(text);
+  return text;
 }
 
 /* ---------- Composer ---------- */
@@ -311,8 +370,13 @@ composer.addEventListener("submit", async (e) => {
     state._resolveText(text);
     return;
   }
+  if (state.busy) { input.value = text; return; }
   me(text);
-  await reply(text);
+  remember("user", text);
+  state.busy = true;
+  composer.classList.add("locked");
+  try { await him(askAI()); }
+  finally { state.busy = false; composer.classList.remove("locked"); input.focus(); }
 });
 
 /* ---------- Persistance ---------- */
@@ -322,6 +386,7 @@ function save() {
     localStorage.setItem("minuit", JSON.stringify({
       personaId: state.persona.id, name: state.name, vibe: state.vibe,
       userName: state.userName, nickname: state.nickname, meet: state.meet,
+      history: state.history,
     }));
   } catch {}
 }
@@ -331,7 +396,8 @@ function load() {
     const d = JSON.parse(localStorage.getItem("minuit") || "null");
     if (!d) return false;
     state.persona = PERSONAS.find((p) => p.id === d.personaId) || PERSONAS[0];
-    Object.assign(state, { name: d.name, vibe: d.vibe, userName: d.userName, nickname: d.nickname, meet: d.meet });
+    Object.assign(state, { name: d.name, vibe: d.vibe, userName: d.userName, nickname: d.nickname, meet: d.meet,
+      history: Array.isArray(d.history) ? d.history : [] });
     return !!VIBES[state.vibe];
   } catch { return false; }
 }
@@ -365,7 +431,56 @@ $("#infoBtn").onclick = () => {
 
 /* ---------- Go ---------- */
 
+/* ---------- Écran d'accueil ---------- */
+
+const welcome = $("#welcome");
+const ageBox = $("#ageOk");
+const startBtn = $("#startBtn");
+ageBox.onchange = () => (startBtn.disabled = !ageBox.checked);
+
+function showApp() {
+  welcome.classList.add("gone");
+  document.querySelector(".app").removeAttribute("inert");
+}
+
+startBtn.onclick = () => {
+  try { localStorage.setItem("minuit-age", "1"); } catch {}
+  showApp();
+  onboarding();
+};
+
+/* ---------- Installation (PWA) ---------- */
+
+let installEvent = null;
+const installBtn = $("#installBtn");
+const isStandalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  installEvent = e;
+  installBtn.hidden = false;
+});
+if (isIOS && !isStandalone) installBtn.hidden = false;
+
+installBtn.onclick = async () => {
+  if (installEvent) {
+    installEvent.prompt();
+    await installEvent.userChoice;
+    installEvent = null;
+    installBtn.hidden = true;
+  } else {
+    $("#iosHint").hidden = false;
+  }
+};
+
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+
+/* ---------- Go ---------- */
+
 setProgress(0);
 refreshHeader();
-if (load()) startChat(false);
-else onboarding();
+if (load()) { showApp(); startChat(false); }
+else document.querySelector(".app").setAttribute("inert", "");
